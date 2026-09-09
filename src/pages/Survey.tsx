@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { getNextQuestionIndex } from '../lib/flow';
+import { Logo } from '../components/Logo';
 
 type SurveyStep = 'LOGIN' | 'SELECTION' | 'CAMPAIGN_INTRO' | 'SURVEY' | 'THANK_YOU';
 
@@ -499,8 +500,7 @@ export default function Survey() {
             <div className="relative group">
               <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 to-cyan-500 rounded-lg blur opacity-25 group-hover:opacity-50 transition duration-1000 group-hover:duration-200"></div>
               <div className="relative flex flex-col items-center">
-                <span className="text-5xl font-logo text-white lowercase tracking-tighter">beend.tech</span>
-                <span className="text-[10px] font-black text-blue-500 uppercase tracking-[0.4em] mt-1 ml-1.5 whitespace-nowrap drop-shadow-[0_0_8px_rgba(59,130,246,0.3)]">SMART SOLUTION</span>
+                <Logo size="h-12" light />
               </div>
             </div>
           </div>
@@ -801,7 +801,7 @@ const cardColors = [
               <div className="hidden md:flex flex-col items-end">
                 <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">SISTEMA POR</span>
                 <div className="flex items-center gap-2 mt-1">
-                  <span className="text-lg font-logo text-white lowercase">beend.tech</span>
+                  <Logo size="h-5" light />
                 </div>
               </div>
             </div>
@@ -1142,7 +1142,7 @@ const cardColors = [
       </div>
       
       <div className="absolute bottom-12 flex flex-col items-center gap-2">
-        <span className="text-lg font-logo text-white lowercase">beend.tech</span>
+        <Logo size="h-5" light />
         <span className="text-[8px] font-black text-zinc-600 uppercase tracking-[0.4em]">feedback systems</span>
       </div>
     </div>
@@ -1167,7 +1167,7 @@ const cardColors = [
         <div className="flex flex-col items-end">
           <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">SISTEMA POR</span>
           <div className="flex items-center gap-2 mt-1">
-            <span className="text-lg font-logo text-white lowercase">beend.tech</span>
+            <Logo size="h-5" light />
           </div>
         </div>
       </div>

@@ -28,6 +28,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { db } from '../lib/db';
+import { Logo } from '../components/Logo';
 import { getNextQuestionIndex } from '../lib/flow';
 
 const cacheImage = async (url: string): Promise<string | null> => {
@@ -720,7 +721,7 @@ export default function SurveyOffline() {
           <div className="relative inline-block">
              <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 to-cyan-500 rounded-lg blur opacity-25"></div>
              <div className="relative">
-                <span className="text-4xl font-logo text-white lowercase">beend.tech</span>
+                <Logo size="h-10" light />
                 <span className="block text-[8px] font-black text-blue-500 uppercase tracking-widest mt-1">HÍBRIDO / OFFLINE</span>
              </div>
           </div>
@@ -1362,7 +1363,7 @@ const cardColors = [
             <div className="hidden md:flex flex-col items-end">
               <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">SISTEMA POR</span>
               <div className="flex items-center gap-2 mt-1">
-                <span className="text-lg font-logo text-white lowercase">beend.tech</span>
+                <Logo size="h-5" light />
               </div>
             </div>
           </div>
@@ -1416,10 +1417,10 @@ const cardColors = [
          </div>
        </div>
 
-       <div className="absolute bottom-12 flex flex-col items-center gap-2">
-         <span className="text-lg font-logo text-white lowercase">beend.tech</span>
-         <span className="text-[8px] font-black text-zinc-600 uppercase tracking-[0.4em]">feedback systems</span>
-       </div>
+<div className="absolute bottom-12 flex flex-col items-center gap-2">
+        <Logo size="h-5" light />
+        <span className="text-[8px] font-black text-zinc-600 uppercase tracking-[0.4em]">feedback systems</span>
+      </div>
     </div>
   );
 

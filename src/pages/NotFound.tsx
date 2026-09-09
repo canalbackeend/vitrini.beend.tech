@@ -1,6 +1,7 @@
 import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { MapPinOff, ArrowLeft, Home, Search } from 'lucide-react';
+import { Logo } from '../components/Logo';
 import { useTheme } from '../contexts/ThemeContext';
 
 export default function NotFound() {
@@ -12,19 +13,7 @@ export default function NotFound() {
     <div className={`min-h-screen flex flex-col items-center justify-center p-6 transition-colors duration-300 ${isDarkMode ? 'bg-[#0a0a0a] text-white' : 'bg-slate-50 text-slate-900'} bg-[radial-gradient(circle_at_top_right,rgba(11,130,255,0.05),transparent_50%)]`}>
       <div className="flex flex-col items-center mb-12">
         <Link to="/" className="flex flex-col group">
-          <span className={`text-3xl font-bold tracking-tighter font-logo lowercase flex items-start leading-none transition-transform group-hover:scale-[1.02] origin-left ${isDarkMode ? 'text-white' : 'text-black'}`}>
-            beend.tech<span className="text-[12px] mt-0.5 ml-0.5 font-sans uppercase">®</span>
-          </span>
-          <div className="flex justify-between w-full mt-1 px-[1px]">
-            {"SMART SOLUTION".split("").map((char, i) => (
-              <span 
-                key={i} 
-                className="text-[6px] font-thin text-slate-400 uppercase leading-none"
-              >
-                {char}
-              </span>
-            ))}
-          </div>
+          <Logo size="h-9" showTagline showRegistered />
         </Link>
       </div>
 

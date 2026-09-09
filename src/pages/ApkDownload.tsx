@@ -1,5 +1,6 @@
 import { motion } from 'motion/react';
 import { Download, Smartphone, Wifi, Shield, Zap } from 'lucide-react';
+import { Logo } from '../components/Logo';
 import { useTheme } from '../contexts/ThemeContext';
 
 export default function ApkDownload() {
@@ -17,7 +18,7 @@ export default function ApkDownload() {
           <div className="relative inline-block">
             <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 to-cyan-500 rounded-lg blur opacity-25"></div>
             <div className="relative">
-              <span className="text-4xl font-logo text-white lowercase">beend.tech</span>
+              <Logo size="h-10" />
               <span className="block text-[8px] font-black text-blue-500 uppercase tracking-widest mt-1">APLICATIVO PARA TERMINAIS</span>
             </div>
           </div>

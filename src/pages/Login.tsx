@@ -16,6 +16,7 @@ import { toast } from "sonner";
 import { api } from "../lib/api";
 import { useAuth } from "../contexts/AuthContext";
 import { useTheme } from "../contexts/ThemeContext";
+import { Logo } from "../components/Logo";
 
 export default function Login() {
   const { theme } = useTheme();
@@ -169,22 +170,7 @@ export default function Login() {
           <div className="relative z-10">
             <Link to="/" className="flex flex-col group mb-12">
               <div className="flex items-start">
-                <span className="text-2xl font-bold tracking-tighter text-white font-logo lowercase group-hover:scale-[1.02] transition-transform origin-left">
-                  beend.tech
-                  <span className="text-[10px] mt-0.5 ml-0.5 font-sans uppercase">
-                    ®
-                  </span>
-                </span>
-              </div>
-              <div className="flex justify-between w-[120px] mt-1 px-[1px]">
-                {"SMART SOLUTION".split("").map((char, i) => (
-                  <span
-                    key={i}
-                    className="text-[5px] font-thin text-slate-400 uppercase leading-none"
-                  >
-                    {char === " " ? "\u00A0" : char}
-                  </span>
-                ))}
+                <Logo size="h-7" light showRegistered />
               </div>
             </Link>
 
