@@ -8,7 +8,7 @@
 
 @layer base {
   body {
-    @apply bg-[#ecf0f1] font-sans text-slate-900 min-h-screen flex flex-col transition-colors duration-300;
+    @apply bg-black font-sans text-slate-900 min-h-screen flex flex-col transition-colors duration-300;
   }
 
   .dark body {
