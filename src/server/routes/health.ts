@@ -1,4 +1,4 @@
-import { prisma, authenticateToken, isMasterAdmin } from "../deps";
+import { prisma, authenticateToken, isMasterAdmin, supabase } from "../deps";
 
 export function registerHealthRoutes(app: any) {
   // Health check
@@ -10,6 +10,7 @@ export function registerHealthRoutes(app: any) {
         timestamp: new Date().toISOString(),
         env: process.env.NODE_ENV,
         database: "ok",
+        supabase: supabase ? "configured" : "missing",
         uptime: Math.round(process.uptime())
       });
     } catch (err) {

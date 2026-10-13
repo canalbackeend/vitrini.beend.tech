@@ -1,15 +1,43 @@
 import crypto from "crypto";
-import { supabase, authenticateToken } from "./deps";
+import { supabase, authenticateToken, supabaseStorageBucket } from "./deps";
 
-// Helper to upload base64 to Supabase bucket "medias"
+// Helper to upload base64 to Supabase bucket (configurável via SUPABASE_STORAGE_BUCKET; padrão "medias")
 // SVG é vetor de stored-XSS (pode embutir scripts) e foi removido.
 const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5MB
 
+let bucketEnsured = false;
+let bucketEnsurePromise: Promise<void> | null = null;
+
+async function ensureMediaBucket(): Promise<void> {
+  if (!supabase) return;
+  if (bucketEnsured) return;
+  if (bucketEnsurePromise) return bucketEnsurePromise;
+  bucketEnsurePromise = (async () => {
+    try {
+      const { data } = await supabase.storage.getBucket(supabaseStorageBucket);
+      if (!data) {
+        await supabase.storage.createBucket(supabaseStorageBucket, { public: true });
+      }
+      bucketEnsured = true;
+    } catch (err) {
+      // Ignora falhas (ex.: sem permissão com chave anon); o upload tratará o erro real.
+      console.warn(`Não foi possível garantir o bucket '${supabaseStorageBucket}' no Supabase:`, err);
+    } finally {
+      bucketEnsurePromise = null;
+    }
+  })();
+  return bucketEnsurePromise;
+}
+
 async function uploadBase64ToSupabase(base64Str: string, folder: string): Promise<string> {
   if (!supabase) {
-    throw new Error("Supabase não está configurado. Por favor, defina SUPABASE_URL e SUPABASE_ANON_KEY nas suas variáveis de ambiente.");
+    throw new Error(
+      "Supabase não está configurado. Defina SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY (ou SUPABASE_ANON_KEY) nas variáveis de ambiente.",
+    );
   }
+
+  await ensureMediaBucket();
 
   // Sanitize folder
   const safeFolder = (folder || "geral").replace(/[^a-zA-Z0-9_-]/g, '');
@@ -41,7 +69,7 @@ async function uploadBase64ToSupabase(base64Str: string, folder: string): Promis
   const filename = `${safeFolder}/${Date.now()}-${crypto.randomBytes(16).toString('hex')}.${ext}`;
 
   const { data, error } = await supabase.storage
-    .from("medias")
+    .from(supabaseStorageBucket)
     .upload(filename, buffer, {
       contentType: mimeType,
       cacheControl: "3600",
@@ -52,7 +80,7 @@ async function uploadBase64ToSupabase(base64Str: string, folder: string): Promis
   }
 
   const { data: { publicUrl } } = supabase.storage
-    .from("medias")
+    .from(supabaseStorageBucket)
     .getPublicUrl(filename);
 
   return publicUrl;

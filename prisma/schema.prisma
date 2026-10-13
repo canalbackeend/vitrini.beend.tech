@@ -1,6 +1,7 @@
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL") // pooler (runtime)
+  directUrl = env("DIRECT_URL")    // conexão direta (migrações)
 }
 
 generator client {
