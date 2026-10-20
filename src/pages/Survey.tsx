@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { api } from '../lib/api';
+import { api, setAuthToken } from '../lib/api';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Terminal as TerminalIcon, 
@@ -115,6 +115,7 @@ export default function Survey() {
       const newCount = prev + 1;
       if (newCount >= 6) {
         localStorage.removeItem('terminal_session');
+        setAuthToken(null);
         setTerminal(null);
         setSelectedCampaign(null);
         setAvailableCampaigns([]);
@@ -236,11 +237,14 @@ export default function Survey() {
 
       setTerminal(terminalData);
       localStorage.setItem('terminal_session', JSON.stringify(terminalData));
+
+      // Atualiza o token em memória, não apenas o localStorage. Sem isso, se o
+      // navegador/WebView já tinha um token antigo, o /campaigns continuava
+      // usando o token anterior e a tela ficava presa no login.
       if (data.access_token) {
-        localStorage.setItem('access_token', data.access_token);
+        setAuthToken(data.access_token);
       }
-      
-      // The API login returns a token
+
       fetchCampaigns(terminalData);
     } catch (err: any) {
       const msg = err?.message || '';
@@ -1209,17 +1213,11 @@ const cardColors = [
 
   return (
     <div className="overflow-x-hidden">
-      <AnimatePresence initial={false} mode="wait">
-        <motion.div
-          key={step}
-          initial={{ opacity: 0, x: 50 }}
-          animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0, x: -50 }}
-          transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
-        >
-          {renderStep()}
-        </motion.div>
-      </AnimatePresence>
+      {/* Sem AnimatePresence/mode="wait" nesta troca de etapa: a tela nova
+          precisa montar imediatamente. Com a animação de saída, uma aba ou
+          WebView em segundo plano podia pausar o requestAnimationFrame e
+          deixar o login visível mesmo após o login ter sido concluído. */}
+      <div key={step}>{renderStep()}</div>
     </div>
   );
 }
