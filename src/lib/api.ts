@@ -40,10 +40,38 @@ function handleUnauthorized(response: Response, hadToken: boolean) {
   }
 }
 
+// Erro de API com o status HTTP preservado. Antes o erro era só o texto cru
+// (ex.: '{"error":"..."}'), o que impedia a UI de distinguir 401 de 429 e de
+// mostrar a mensagem real do servidor.
+export class ApiError extends Error {
+  status: number;
+  retryAfterSeconds: number | null;
+
+  constructor(message: string, status: number, retryAfterSeconds: number | null = null) {
+    super(message);
+    this.name = "ApiError";
+    this.status = status;
+    this.retryAfterSeconds = retryAfterSeconds;
+  }
+}
+
 async function handleResponse(response: Response, hadToken: boolean) {
   if (!response.ok) {
     handleUnauthorized(response, hadToken);
-    throw new Error(await response.text());
+
+    const rawBody = await response.text();
+    let message = rawBody;
+    try {
+      const parsed = JSON.parse(rawBody);
+      if (parsed && typeof parsed.error === "string") message = parsed.error;
+    } catch {
+      // resposta não-JSON: mantém o texto original
+    }
+
+    const retryAfterHeader = response.headers.get("retry-after");
+    const retryAfterSeconds = retryAfterHeader ? Number(retryAfterHeader) : null;
+
+    throw new ApiError(message || `Erro HTTP ${response.status}`, response.status, retryAfterSeconds);
   }
   return response.status === 204 ? null : response.json();
 }

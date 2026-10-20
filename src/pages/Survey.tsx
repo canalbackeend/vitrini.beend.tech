@@ -245,10 +245,32 @@ export default function Survey() {
     } catch (err: any) {
       const msg = err?.message || '';
       console.error(err);
-      if (msg.includes('bloqueada') || msg.includes('bloqueado')) {
+
+      if (err?.status === 429) {
+        const minutes = err.retryAfterSeconds
+          ? Math.max(1, Math.ceil(err.retryAfterSeconds / 60))
+          : 15;
+        toast.error('Muitas tentativas de login', {
+          description: `Aguarde cerca de ${minutes} minuto(s) e tente novamente.`,
+          duration: 10000,
+        });
+      } else if (msg.includes('expirado')) {
+        toast.error('Período de teste expirado', {
+          description: msg,
+          duration: 10000,
+        });
+      } else if (msg.includes('bloqueada') || msg.includes('bloqueado')) {
         toast.error('Conta bloqueada, impossível sincronizar os dados.', { duration: 8000 });
+      } else if (msg.includes('Credenciais de terminal inválidas')) {
+        toast.error('E-mail ou senha do terminal incorretos', {
+          description: 'Use o e-mail e a senha exibidos em Terminais → Credenciais.',
+          duration: 8000,
+        });
       } else {
-        toast.error('Ocorreu um erro ao tentar logar');
+        toast.error('Erro ao conectar o terminal', {
+          description: msg || 'Tente novamente.',
+          duration: 8000,
+        });
       }
     } finally {
       setLoading(false);

@@ -56,10 +56,25 @@ export const ADMIN_RESET_SECRET =
 export const prisma = new PrismaClient();
 
 // Limitadores de requisições (rate limiting) por endpoint:
-// - authLimiter: 10 tentativas / 15min (login e registro).
+// - authLimiter: tentativas de login/registro por IP (padrão: 20 falhas / 15min).
 // - apiLimiter: 120 requisições / min para toda a API (exceto health check).
 // - publicResponseLimiter: 60 envios / min para o endpoint público de respostas.
-export const authLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 10, message: { error: "Muitas tentativas. Tente novamente mais tarde." } });
+//
+// `skipSuccessfulRequests` é essencial aqui: login bem-sucedido NÃO consome cota.
+// Sem isso, um kiosk que autentica várias vezes (ou vários terminais atrás do
+// mesmo NAT) esgota o limite mesmo com credenciais corretas e passa a receber
+// 429 — que o frontend antigo mostrava como "erro ao logar".
+const AUTH_RATE_LIMIT_MAX = Math.max(1, Number(process.env.AUTH_RATE_LIMIT_MAX) || 20);
+export const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: AUTH_RATE_LIMIT_MAX,
+  skipSuccessfulRequests: true,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    error: `Muitas tentativas de login. Aguarde 15 minutos e tente novamente.`,
+  },
+});
 export const apiLimiter = rateLimit({ windowMs: 60 * 1000, max: 120, skip: (req) => req.path.startsWith("/api/health"), message: { error: "Muitas requisições. Tente novamente mais tarde." } });
 export const publicResponseLimiter = rateLimit({ windowMs: 60 * 1000, max: 60, message: { error: "Muitas requisições. Tente novamente mais tarde." } });
 

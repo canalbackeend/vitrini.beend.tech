@@ -214,7 +214,12 @@ export function registerAuthRoutes(app: any) {
       });
 
       if (!terminal || !terminal.password) {
-        logTerminalLogin(req, { attemptedEmail: String(email).trim().toLowerCase(), success: false, reason: "credenciais inválidas" });
+        console.log(`Login failed: terminal not found or without password`);
+        logTerminalLogin(req, {
+          attemptedEmail: String(email).trim().toLowerCase(),
+          success: false,
+          reason: terminal ? "terminal sem senha cadastrada" : "terminal não encontrado",
+        });
         return res
           .status(401)
           .json({ error: "Credenciais de terminal inválidas" });
@@ -226,7 +231,7 @@ export function registerAuthRoutes(app: any) {
           ? await bcrypt.compare(password, terminal.password)
           : password === terminal.password;
       if (!isValid) {
-        logTerminalLogin(req, { terminal, success: false, reason: "credenciais inválidas" });
+        logTerminalLogin(req, { terminal, success: false, reason: "senha incorreta" });
         return res
           .status(401)
           .json({ error: "Credenciais de terminal inválidas" });
