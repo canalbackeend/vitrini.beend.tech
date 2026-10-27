@@ -86,3 +86,10 @@ Storage para outro host, atualize `ALLOWED_PROXY_DOMAINS` em `src/server/uploads
   `SUPABASE_STORAGE_BUCKET="<nome-real>"` ou crie um bucket com o nome esperado.
 - **Images 403/404**: bucket não é público ou policy de select ausente.
 - **DB connection errors (Prisma)**: use o pooler em `DATABASE_URL` e evite muitas instâncias.
+
+## 6. "fetch failed" / "hostname could not be found"
+
+Esse erro não é do bucket: o servidor (ou o navegador) não conseguiu resolver o host do
+Supabase. Confira `SUPABASE_URL` no ambiente — espaço, aspas, barra no final ou o
+placeholder `https://<project-ref>.supabase.co` quebram o upload. O `/api/health` mostra
+`storage.host` e `storage.dns`; o script `check-supabase.ts` faz o teste de DNS.
