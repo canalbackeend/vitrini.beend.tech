@@ -27,7 +27,7 @@ if (!supabaseUrl) {
   console.warn("AVISO: SUPABASE_URL não definido; upload de imagens (Supabase Storage) estará desativado.");
 } else if (!supabaseServiceKey) {
   console.warn(
-    "AVISO: SUPABASE_SERVICE_ROLE_KEY não definido; usando chave anon. Uploads podem falhar por RLS no bucket 'medias'. Recomendado definir a chave de serviço no backend.",
+    "AVISO: SUPABASE_SERVICE_ROLE_KEY não definido; usando chave anon. Uploads dependem das policies de RLS do bucket. Recomendado definir a chave de serviço no backend.",
   );
 }
 

@@ -1,33 +1,47 @@
 import crypto from "crypto";
-import { supabase, authenticateToken, supabaseStorageBucket } from "./deps";
+import { supabase, authenticateToken, supabaseServiceKey, supabaseStorageBucket } from "./deps";
 
-// Helper to upload base64 to Supabase bucket (configurável via SUPABASE_STORAGE_BUCKET; padrão "medias")
+// Upload de imagens para o Supabase Storage.
+// O bucket é resolvido em tempo de execução: SUPABASE_STORAGE_BUCKET quando definido,
+// senão tenta os nomes usados nos projetos beend.tech ("uploads" e "medias").
 // SVG é vetor de stored-XSS (pode embutir scripts) e foi removido.
 const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5MB
 
-let bucketEnsured = false;
-let bucketEnsurePromise: Promise<void> | null = null;
+const FALLBACK_BUCKETS = ["uploads", "medias"];
+const BUCKET_CANDIDATES = [...new Set([supabaseStorageBucket.trim(), ...FALLBACK_BUCKETS].filter(Boolean))];
 
-async function ensureMediaBucket(): Promise<void> {
-  if (!supabase) return;
-  if (bucketEnsured) return;
-  if (bucketEnsurePromise) return bucketEnsurePromise;
-  bucketEnsurePromise = (async () => {
-    try {
-      const { data } = await supabase.storage.getBucket(supabaseStorageBucket);
-      if (!data) {
-        await supabase.storage.createBucket(supabaseStorageBucket, { public: true });
-      }
-      bucketEnsured = true;
-    } catch (err) {
-      // Ignora falhas (ex.: sem permissão com chave anon); o upload tratará o erro real.
-      console.warn(`Não foi possível garantir o bucket '${supabaseStorageBucket}' no Supabase:`, err);
-    } finally {
-      bucketEnsurePromise = null;
+// Bucket que funcionou de fato (cacheado após o primeiro upload bem-sucedido).
+let resolvedBucket: string | null = null;
+let bucketEnsured = false;
+
+/** Estado do Storage para diagnóstico (sem expor chaves). */
+export function getStorageStatus() {
+  return {
+    configured: Boolean(supabase),
+    key: supabaseServiceKey ? "service_role" : "anon",
+    bucket: resolvedBucket ?? (supabaseStorageBucket.trim() || BUCKET_CANDIDATES[0]),
+    candidates: BUCKET_CANDIDATES,
+  };
+}
+
+function isMissingBucket(message: string): boolean {
+  return /bucket.*not found|not found.*bucket|does not exist|não existe/i.test(message);
+}
+
+// A chave anon não tem permissão para ler/criar buckets; só a service_role cria.
+async function ensureBucket(bucket: string): Promise<void> {
+  if (!supabase || !supabaseServiceKey || bucketEnsured) return;
+  try {
+    const { data } = await supabase.storage.getBucket(bucket);
+    if (!data) {
+      await supabase.storage.createBucket(bucket, { public: true });
     }
-  })();
-  return bucketEnsurePromise;
+    bucketEnsured = true;
+  } catch (err) {
+    // Ignora: o upload abaixo reporta o erro real (ex.: RLS com a chave anon).
+    console.warn(`Não foi possível garantir o bucket '${bucket}' no Supabase:`, err);
+  }
 }
 
 async function uploadBase64ToSupabase(base64Str: string, folder: string): Promise<string> {
@@ -36,8 +50,6 @@ async function uploadBase64ToSupabase(base64Str: string, folder: string): Promis
       "Supabase não está configurado. Defina SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY (ou SUPABASE_ANON_KEY) nas variáveis de ambiente.",
     );
   }
-
-  await ensureMediaBucket();
 
   // Sanitize folder
   const safeFolder = (folder || "geral").replace(/[^a-zA-Z0-9_-]/g, '');
@@ -60,7 +72,7 @@ async function uploadBase64ToSupabase(base64Str: string, folder: string): Promis
   if (buffer.length > MAX_IMAGE_SIZE) {
     throw new Error("Imagem muito grande. O tamanho máximo é 5MB.");
   }
-  
+
   let ext = "png";
   if (mimeType.includes("jpeg") || mimeType.includes("jpg")) ext = "jpg";
   else if (mimeType.includes("gif")) ext = "gif";
@@ -68,22 +80,39 @@ async function uploadBase64ToSupabase(base64Str: string, folder: string): Promis
 
   const filename = `${safeFolder}/${Date.now()}-${crypto.randomBytes(16).toString('hex')}.${ext}`;
 
-  const { data, error } = await supabase.storage
-    .from(supabaseStorageBucket)
-    .upload(filename, buffer, {
-      contentType: mimeType,
-      cacheControl: "3600",
-    });
+  const candidates = resolvedBucket ? [resolvedBucket] : BUCKET_CANDIDATES;
+  let lastError: Error | null = null;
 
-  if (error) {
-    throw new Error(`Erro ao enviar para o Supabase Storage: ${error.message}`);
+  for (const bucket of candidates) {
+    await ensureBucket(bucket);
+
+    const { error } = await supabase.storage
+      .from(bucket)
+      .upload(filename, buffer, {
+        contentType: mimeType,
+        cacheControl: "3600",
+      });
+
+    if (!error) {
+      if (resolvedBucket !== bucket) {
+        resolvedBucket = bucket;
+        if (bucket !== supabaseStorageBucket.trim()) {
+          console.warn(
+            `Supabase Storage: usando o bucket '${bucket}'. Defina SUPABASE_STORAGE_BUCKET='${bucket}' para fixar.`,
+          );
+        }
+      }
+      const { data: { publicUrl } } = supabase.storage.from(bucket).getPublicUrl(filename);
+      return publicUrl;
+    }
+
+    lastError = new Error(error.message);
+    if (!isMissingBucket(error.message)) break; // erro de permissão/tamanho: não adianta trocar de bucket
   }
 
-  const { data: { publicUrl } } = supabase.storage
-    .from(supabaseStorageBucket)
-    .getPublicUrl(filename);
-
-  return publicUrl;
+  throw new Error(
+    `Erro ao enviar para o Supabase Storage (bucket tentado: ${candidates.join(", ")}): ${lastError?.message ?? "erro desconhecido"}`,
+  );
 }
 
 // Proxy endpoint to download and serve images with CORS headers (public for PDF logos)

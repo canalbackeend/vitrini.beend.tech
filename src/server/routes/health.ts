@@ -1,4 +1,5 @@
 import { prisma, authenticateToken, isMasterAdmin, supabase } from "../deps";
+import { getStorageStatus } from "../uploads";
 
 export function registerHealthRoutes(app: any) {
   // Health check
@@ -11,6 +12,7 @@ export function registerHealthRoutes(app: any) {
         env: process.env.NODE_ENV,
         database: "ok",
         supabase: supabase ? "configured" : "missing",
+        storage: getStorageStatus(),
         uptime: Math.round(process.uptime())
       });
     } catch (err) {
